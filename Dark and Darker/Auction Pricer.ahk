@@ -7,16 +7,18 @@
 
 F3::
 {
-    ocrResult := OCR.FromRect(1333, 140, 577, 890, , scale:=1).Text  ; Scans Stash area in auction window for item
+    ocrResult := OCR.FromRect(1333, 140, 577, 950, , scale:=1).Text  ; Scans Stash area in auction window for item
 
     rarity := GetItemRarity(ocrResult)
     itemName := GetItemName(ocrResult)
 
     if (itemName = "") {
-        ToolTip("Item not found, try again.")
+        ; TrayTip(,"Item not found, try again.", 1, )
+        
         return
     }
 
+    ; enchantment := GetItemEnchantments(ocrResult)
     enchantment := GetItemEnchantments(ocrResult)
 
     ; TODO
@@ -59,11 +61,17 @@ F3::
     MouseClick("Left", 1500, 250, , ) ; Click enchantment name search box
     Sleep(250)
     Send("^a{BS}") ; Clear textbox
-    Sleep(100)
-    Send(enchantment) ; Type enchantment name
-    Sleep(100)
-    MouseClick("Left", 1500, 275, , ) ; Click enchantment name
-    Sleep(100)
+    Sleep(150)
+    enchantPos := 275
+    for index, val in enchantment {
+        Send(val) ; Type enchantment name
+        Sleep(150)
+        MouseClick("Left", 1500, enchantPos, , ) ; Click enchantment name
+        Sleep(150)
+        MouseClick("Left", 1500, 250, , ) ; Click enchantment name search box
+        Sleep(100)
+        enchantPos += 25
+    }
     MouseClick("Left", 1800, 275, , ) ; Click search
 }
 
@@ -87,9 +95,6 @@ GetItemRarity(ocrResult) {
 
 GetItemName(ocrResult) {
     itemName := ""
-    ; TODO
-    ; I tried using a while loop here because sometimes the OCR cannot detect the text.
-    ; This didn't actually solve the issue. For now, just use hotkey again.
     while (itemName = "" && A_Index <= 3) {
         for i, item in ITEMS {
             if InStr(ocrResult, item) {
@@ -113,7 +118,7 @@ GetItemEnchantments(ocrResult) {
     ; TODO
     ; This currently only finds the first enchantment. We need to find all enchantments.
     enchantmentsFound := []
-    enchantment := ""
+    enchantment := []
 
     for enchantmentI in ENCHANTMENTS {
         enchantmentRegex := "\+(\d+(?:\.\d+)?%?) " . enchantmentI
@@ -128,7 +133,7 @@ GetItemEnchantments(ocrResult) {
         enchantmentsText := ""
         for index, enchantmentL in enchantmentsFound {
             enchantmentsText .= enchantmentL
-            enchantment := enchantmentL
+            enchantment.Push(enchantmentL)
             if (index < enchantmentsFound.Length) {
                 enchantmentsText .= ", "
             }
